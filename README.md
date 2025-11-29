@@ -4,8 +4,6 @@ This repository contains my work as part of the M-Level module [Advanced Regress
 
 'Module_Data.Rdata' contains all the data used across all 10 practicals.
 
-(I aim to eventually replace the R script files with Quarto files)
-
 ## Practical summaries
 
 **Practical 1** - R basics, bivariate data and correlation, checking normality and histograms.
