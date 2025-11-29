@@ -1,13 +1,15 @@
 ---
 title: "Practical 7"
-format: html
+format: 
+  html:
+    self-contained: true
 editor: visual
 ---
 
 ### Required packages
 
 ```{r}
-#| include: false
+#| message: false
 library("lme4")
 ```
 
@@ -134,7 +136,7 @@ $$
 where $Y_{ij}$ is the quality of life of a patient, $x_{ij1}$ is the age of the patient and $x_{ij2}$ is a dummy variable indicating which drug the patient took.
 
 ```{r}
-#| include: false
+#| warning: false
 model2 <- lmer(QoL ~ age + drug + (1 + age | hospital), data = trial)
 
 randomeffects <- ranef(model2)
@@ -168,6 +170,7 @@ for(j in 1:6){ # regression line for drug B - dotted line
 ### Exercise 6
 
 *Suppose we change our model by running the following code:*
+
 ```{r}
 model3 <- lmer(QoL ~ age + drug + (1 + drug | hospital), data = trial)
 ```
@@ -179,3 +182,31 @@ This code represents the random slope model:
 $$
 Y_{ij} = (\beta_0 +u_{0j}) + \beta_1 x_{ij1} + (\beta_2 + u_{1j}) x_{ij2} + \varepsilon_{ij}
 $$
+
+Extracting parameters:
+
+```{r}
+randomeffects <- ranef(model3)
+u0 <- randomeffects$hospital$"(Intercept)"
+u1 <- randomeffects$hospital$"drug"
+
+beta0 <- model3@beta[1] # intercept
+beta1 <- model3@beta[2] # age
+beta2 <- model3@beta[3] # drug (random)
+```
+
+The random effect in this model allows the effect of the drug to vary randomly - this is a random **slope** model yet the regression lines will have the same slope.
+
+```{r}
+plot(QoL ~ age, data = trial, 
+     col = colours[hospital], 
+     pch = as.character(hospital))
+
+for(j in 1:6) { # regression line for drug A - solid line
+  abline(a = beta0 + u0[j], b = beta1, col = colours[j]) 
+}
+
+for(j in 1:6) { # regression line for drug B - dotted line
+  abline(a = beta0 + u0[j] + beta2 + u1[j], b = beta1, col = colours[j], lty = 2) 
+  }
+```
