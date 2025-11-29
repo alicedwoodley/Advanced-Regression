@@ -1,0 +1,181 @@
+---
+title: "Practical 7"
+format: html
+editor: visual
+---
+
+### Required packages
+
+```{r}
+#| include: false
+library("lme4")
+```
+
+### Load data
+
+```{r}
+load("Module_Data.Rdata")
+```
+
+## Multilevel models - 'Angels of death'
+
+Again using the data on angels of death:
+
+```{r}
+angel$Killer_ID <- factor(angel$Killer_ID)
+angel[1:7,]
+```
+
+### Exercise 1
+
+*Last week, you analysed the cooling-off period variable using linear regression. Given what you learned about multilevel models in Chapter 7, describe a possible problem with that analysis.*
+
+A killer's cooling off periods might be correlated, which violates the independence assumption of a normal linear regression model.
+
+### Exercise 2
+
+*Suppose that we want to use a multilevel model with cooling-off period at the response and with victims grouped by killer. Is the structure of the data hierarchical? Explain your answer.*
+
+Yes, the data is hierarchical as each victim was killed by one killer.
+
+### Exercise 3
+
+*Use a random intercept model to investigate how cooling-off period depends on victim number (this can help us to learn about whether cooling-off periods tend to change as a killer becomes more experienced). Use R to estimate the parameters of that model and interpret the estimates. Calculate and interpret the ICC. Make a plot to illustrate your estimated model.*
+
+We want to create the random intercept model:
+
+$$
+Y_{ij} = \beta_0 + \beta_1 x_{ij1} + u_{0j} + \varepsilon_{ij}
+$$
+
+where $Y_{ij}$ is the cooling-off period and $x_{ij1}$ is the victim number.
+
+```{r}
+model1 <- lmer(Cooling ~ Vic_Number + (1 | Killer), data = angel)
+summary(model1)
+```
+
+$\hat{\beta}_0 \approx 35.6$ (technically the cooling off period after the 0th victim) has no meaning here.
+
+$\hat{\beta}_1 \approx -2.5$ says that after each additional kill, the expected cooling off period decreases by around 2.5 weeks.
+
+$\hat{\sigma}_{u0} \approx 12.3$ weeks and $\hat{\sigma}_{\varepsilon} \approx 3.9$ weeks describe the between-killer and within-killer spread in cooling-off periods, conditional on number of victims.
+
+The estimated ICC is...
+
+$$
+\rho \approx \frac{12.3^2}{12.3^2 + 3.9^2} \approx 0.9
+$$
+
+... which is very high. If we know the past cooling-off periods of a killer, then their future cooling-off periods might be quite predictable.
+
+Extracting model parameters:
+
+```{r}
+randomeffects <- ranef(model1)
+u0 <- randomeffects$Killer$"(Intercept)"
+u0
+```
+
+```{r}
+beta0 <- model1@beta[1]
+beta1 <- model1@beta[2]
+beta0; beta1
+```
+
+Plotting the model:
+
+```{r}
+colours <- c("blue", "red3", "goldenrod4", "darkgreen","magenta3", "darkorchid4", "black")
+
+plot(Cooling ~ Vic_Number, data = angel, 
+     col = colours[Killer_ID], 
+     pch = as.character(Killer_ID))
+
+for(j in 1:7){ 
+  abline(a = beta0 + u0[j], b= beta1, col = colours[j])
+}
+```
+
+### Exercise 4
+
+*How could you use plots of the residuals (estimated random errors and estimated random effects) to check the normality assumptions? Use the functions* `ranef()` *and* `resid()` *to get the residuals. Make the residual plots and interpret them.*
+
+```{r}
+epsilon <- resid(model1)
+par(mfrow = c(1,2))
+qqnorm(u0)
+qqnorm(epsilon)
+```
+
+Looking at these plots the normality assumptions seem reasonable.
+
+## Multilevel models - drug trial
+
+Using the drug trial dataset:
+
+```{r}
+trial$hospital <- factor(trial$hospital)
+trial$drug <- factor(trial$drug)
+
+trial[1:4,]
+```
+
+### Exercise 5
+
+*Draw the figure from the random slope example in the lecture notes by adapting the code from the random intercept example in the lecture notes.*
+
+We want to plot the random slope model:
+
+$$
+Y_{ij} = (\beta_0 + u_{0j}) + (\beta_1 + u_{1j}) x_{ij1} + \beta_2 x_{ij2} + \varepsilon_{ij}
+$$
+
+where $Y_{ij}$ is the quality of life of a patient, $x_{ij1}$ is the age of the patient and $x_{ij2}$ is a dummy variable indicating which drug the patient took.
+
+```{r}
+#| include: false
+model2 <- lmer(QoL ~ age + drug + (1 + age | hospital), data = trial)
+
+randomeffects <- ranef(model2)
+u0 <- randomeffects$hospital$"(Intercept)"
+u1 <- randomeffects$hospital$"age"
+
+beta0 <- model2@beta[1]
+beta1 <- model2@beta[2]
+beta2 <- model2@beta[3]
+```
+
+Creating the plot:
+
+```{r}
+colours <- c("blue", "red3", "goldenrod4", "darkgreen","magenta3", "darkorchid4")
+
+par(mfrow = c(1,1))
+plot(QoL ~ age, data = trial, 
+     col = colours[hospital], 
+     pch = as.character(hospital))
+
+for(j in 1:6){ # regression line for drug A - solid line
+  abline(a = beta0 + u0[j], b = beta1 + u1[j], col = colours[j])
+}
+
+for(j in 1:6){ # regression line for drug B - dotted line
+  abline(a = beta0 + beta2 + u0[j], b = beta1 + u1[j], col = colours[j], lty = 2) 
+}
+```
+
+### Exercise 6
+
+*Suppose we change our model by running the following code:*
+```{r}
+model3 <- lmer(QoL ~ age + drug + (1 + drug | hospital), data = trial)
+```
+
+*Write down this new model in clear mathematical notation. How do we interpret the random effects in this model? Make a plot that illustrates this new model.*
+
+This code represents the random slope model:
+
+$$
+Y_{ij} = (\beta_0 +u_{0j}) + \beta_1 x_{ij1} + (\beta_2 + u_{1j}) x_{ij2} + \varepsilon_{ij}
+$$
