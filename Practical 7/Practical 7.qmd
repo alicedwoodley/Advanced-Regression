@@ -16,7 +16,7 @@ library("lme4")
 ### Load data
 
 ```{r}
-load("~/GitHub/advanced-regression/Module_Data.Rdata")
+load("~/GitHub/Advanced-Regression/Module_Data.Rdata")
 ```
 
 ## Multilevel models - 'Angels of death'
