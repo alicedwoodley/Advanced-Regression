@@ -22,8 +22,8 @@ This repository contains my work as part of the M-Level module [Advanced Regress
 
 **Practical 8** - Three level models and models of repeated measures.
 
-**Practical 9** - To be completed on 05/12/25.
+**Practical 9** - Local constant, linear and polynomial regression.
 
-**Practical 10** - To be completed on 12/12/25.
+**Practical 10** - Revision.
 
 
